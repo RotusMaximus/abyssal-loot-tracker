@@ -70,7 +70,7 @@ class LootTrackerApp(App):
                 yield Label("Comment:")
                 yield Input(placeholder="Add a comment...", id="comment_input")
             with Vertical(id="run-container"):
-                yield RichLog(id="run_log", wrap=True, markup=True, highlight=True)
+                yield RichLog(id="run_log", wrap=True, markup=True)
         with Horizontal(id="controls"):
             yield Button("Start Run", id="start_run", variant="success")
             yield Button("Stop Run", id="stop_run", variant="error", disabled=True)
@@ -78,7 +78,7 @@ class LootTrackerApp(App):
     def on_mount(self) -> None:
         price_checker.initialize_price_db()
         self.query_one("#run_log", RichLog).write(
-            "Welcome! Set metadata and press 'Start Run'.")
+            "[#EF4343]W[/#EF4343][#EFC443]e[/#EFC443][#99EF43]l[/#99EF43][#43EF6E]c[/#43EF6E][#43EFEF]o[/#43EFEF][#436EEF]m[/#436EEF][#9943EF]e[/#9943EF][#EF43C4]![/#EF43C4] Set metadata and press 'Start Run'.")
         self.clipboard_monitor.start()
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -124,9 +124,10 @@ class LootTrackerApp(App):
         except ValueError:
             self.active_run.tier = -1
         log.write("--- New Run Started ---")
-        log.write(f"Timestamp: {time.ctime(self.active_run.start_time)}")
         log.write(
-            f"Metadata: Tier {self.active_run.tier} {self.active_run.weather} | {self.active_run.ship_amount}x {self.active_run.ship_type}")
+            f"Timestamp: [cyan]{time.ctime(self.active_run.start_time)}[/cyan]")
+        log.write(
+            f"Currently Running: [cyan]Tier {self.active_run.tier} {self.active_run.weather}[/cyan] | [cyan]{self.active_run.ship_amount}x {self.active_run.ship_type}[/cyan]")
         log.write("\nNow copy your inventory to record the first state...")
         self.query_one("#start_run", Button).disabled = True
         self.query_one("#stop_run", Button).disabled = False
@@ -160,12 +161,13 @@ class LootTrackerApp(App):
                 source = data['source']
                 if source == 'cache':
                     log.write(
-                        f" > Price for '{name}' loaded from [yellow]cache[/yellow].")
+                        f" > Price for [green]'{name}'[/green] loaded from [yellow]cache[/yellow].")
                 elif source == 'api':
                     log.write(
-                        f" > Price for '{name}' queried from [cyan]API[/cyan].")
+                        f" > Price for [green]'{name}'[/green]  queried from [cyan]API[/cyan].")
                 else:
-                    log.write(f" > Price for '{name}' [red]not found[/red].")
+                    log.write(
+                        f" > Price for [green]'{name}'[/green]  [red]not found[/red].")
 
             # Process looted items
             for name, qty in looted_items.items():
@@ -191,22 +193,26 @@ class LootTrackerApp(App):
 
         log.write("\n--- Run Ended ---")
         log.write(f"Comment: {self.active_run.comment}")
-        log.write(f"Looted Items: {looted_items}")
-        log.write(f"Consumed Items: {consumed_items}")
+        log.write(f"Looted Items:")
+        for name, qty in looted_items.items():
+            log.write(f"[green]{name}[/green]: [cyan]{qty}[/cyan]")
+        log.write(f"\nConsumed Items:")
+        for name, qty in consumed_items.items():
+            log.write(f"[green]{name}[/green]: [cyan]{qty}[/cyan]")
         formatted_total_looted_sell = locale.format_string(
             '%.2f', total_looted_sell, grouping=True)
         formatted_total_consumed_sell = locale.format_string(
             '%.2f', total_consumed_sell, grouping=True)
         log.write(
-            f"\n[bold green]Total Loot Value (Sell):[/bold green] {formatted_total_looted_sell} ISK")
+            f"\n[bold green]Total Loot Value (Sell):[/bold green] [bold cyan]{formatted_total_looted_sell}[/bold cyan] ISK]")
         log.write(
-            f"[bold red]Total Consumed Value (Sell):[/bold red] {formatted_total_consumed_sell} ISK")
+            f"[bold red]Total Consumed Value (Sell):[/bold red] [bold cyan]{formatted_total_consumed_sell}[/bold cyan] ISK")
         net_profit = total_looted_sell - total_consumed_sell
         formatted_net_profit = locale.format_string(
             '%.2f', net_profit, grouping=True)
         profit_color = "green" if net_profit >= 0 else "red"
         log.write(
-            f"\n--- [bold {profit_color}]Net Profit (Sell): {formatted_net_profit} ISK[/bold {profit_color}] ---")
+            f"\n--- [bold {profit_color}]Net Profit (Sell): {formatted_net_profit}[/bold {profit_color}]  ISK ---")
 
         self.active_run = None
         self.query_one("#start_run", Button).disabled = False
@@ -227,9 +233,10 @@ class LootTrackerApp(App):
                 log.write("--- Initial inventory state recorded. ---")
             else:
                 log.write(
-                    f"\n--- Clipboard updated at {time.ctime(new_state.timestamp)} ---")
+                    f"\n--- Clipboard updated at [cyan]{time.ctime(new_state.timestamp)}[/cyan] ---")
             for item in new_state.items.values():
-                log.write(f"{item.name}: {item.quantity}")
+                log.write(
+                    f"[green]{item.name}[/green]: [cyan]{item.quantity}[/cyan]")
 
 
 if __name__ == "__main__":
