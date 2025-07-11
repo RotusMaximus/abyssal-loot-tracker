@@ -11,6 +11,15 @@ class Item:
 
 
 @dataclasses.dataclass
+class PricedItem:
+    """Stores item details including the price at the time of the run."""
+    name: str
+    quantity: int
+    min_sell: float
+    max_buy: float
+
+
+@dataclasses.dataclass
 class RunState:
     """Represents a snapshot of the inventory at a specific time."""
     timestamp: float
@@ -40,11 +49,11 @@ class LootRun:
     ship_amount: int = 0
     weather: str = "N/A"
     tier: int = -1
-    # New fields to store historical run value
-    total_looted_value_sell: float = 0.0
-    total_looted_value_buy: float = 0.0
-    total_consumed_value_sell: float = 0.0
-    total_consumed_value_buy: float = 0.0
+    # New fields to store detailed, priced item lists
+    looted_items_priced: List[PricedItem] = dataclasses.field(
+        default_factory=list)
+    consumed_items_priced: List[PricedItem] = dataclasses.field(
+        default_factory=list)
 
     def add_state(self, state: RunState):
         self.states.append(state)

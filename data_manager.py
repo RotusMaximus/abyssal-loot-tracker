@@ -1,7 +1,8 @@
 import json
 import dataclasses
 from typing import List
-from loot_run import LootRun
+# We need to import the data models to reconstruct them
+from loot_run import LootRun, PricedItem
 
 
 class EnhancedJSONEncoder(json.JSONEncoder):
@@ -20,12 +21,36 @@ def save_runs(runs: List[LootRun], filename: str = "loot_runs.json"):
 
 
 def load_runs(filename: str = "loot_runs.json") -> List[LootRun]:
-    """Loads loot runs from a JSON file."""
+    """
+    Loads loot runs from a JSON file, handling both old and new data formats.
+    """
     try:
         with open(filename, 'r') as f:
-            data = json.load(f)
-            # This is a simplified deserialization. For more complex needs,
-            # you might need a more robust solution.
-            return [LootRun(**run_data) for run_data in data]
-    except FileNotFoundError:
+            raw_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
         return []
+
+    runs = []
+    for run_data in raw_data:
+        # Check for the new format by seeing if 'looted_items_priced' exists
+        if 'looted_items_priced' in run_data:
+            # Pop the lists of dictionaries from the main data dict
+            looted_dicts = run_data.pop('looted_items_priced', [])
+            consumed_dicts = run_data.pop('consumed_items_priced', [])
+
+            # Reconstruct the PricedItem objects
+            looted_items = [PricedItem(**d) for d in looted_dicts]
+            consumed_items = [PricedItem(**d) for d in consumed_dicts]
+
+            # Create the LootRun object from the remaining flat data
+            run = LootRun(**run_data)
+            # Assign the reconstructed object lists
+            run.looted_items_priced = looted_items
+            run.consumed_items_priced = consumed_items
+            runs.append(run)
+        else:
+            # Handle old format: simply create the object.
+            # The priced lists will be empty by default.
+            runs.append(LootRun(**run_data))
+
+    return runs
