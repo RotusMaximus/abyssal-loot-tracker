@@ -49,7 +49,7 @@ class LootRun:
     ship_amount: int = 0
     weather: str = "N/A"
     tier: int = -1
-    # New fields to store detailed, priced item lists
+    # The priced item lists are now the ONLY record of value.
     looted_items_priced: List[PricedItem] = dataclasses.field(
         default_factory=list)
     consumed_items_priced: List[PricedItem] = dataclasses.field(
@@ -59,27 +59,25 @@ class LootRun:
         self.states.append(state)
 
     def get_looted_items(self) -> Dict[str, int]:
-        if not self.states:
-            return {}
+        if len(self.states) < 2:
+            return {}  # Need at least a start and end state
         initial_items = self.states[0].items
         latest_items = self.states[-1].items
         looted = {}
         for name, item in latest_items.items():
-            if name not in initial_items:
-                looted[name] = item.quantity
-            elif name in initial_items and item.quantity > initial_items[name].quantity:
-                looted[name] = item.quantity - initial_items[name].quantity
+            initial_qty = initial_items.get(name, Item(name, 0)).quantity
+            if item.quantity > initial_qty:
+                looted[name] = item.quantity - initial_qty
         return looted
 
     def get_consumed_items(self) -> Dict[str, int]:
-        if not self.states:
+        if len(self.states) < 2:
             return {}
         initial_items = self.states[0].items
         latest_items = self.states[-1].items
         consumed = {}
         for name, item in initial_items.items():
-            if name not in latest_items:
-                consumed[name] = item.quantity
-            elif name in latest_items and latest_items[name].quantity < item.quantity:
-                consumed[name] = item.quantity - latest_items[name].quantity
+            latest_qty = latest_items.get(name, Item(name, 0)).quantity
+            if item.quantity > latest_qty:
+                consumed[name] = item.quantity - latest_qty
         return consumed

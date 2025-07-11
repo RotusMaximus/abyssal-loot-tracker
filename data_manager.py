@@ -1,7 +1,6 @@
 import json
 import dataclasses
 from typing import List
-# We need to import the data models to reconstruct them
 from loot_run import LootRun, PricedItem
 
 
@@ -22,7 +21,7 @@ def save_runs(runs: List[LootRun], filename: str = "loot_runs.json"):
 
 def load_runs(filename: str = "loot_runs.json") -> List[LootRun]:
     """
-    Loads loot runs from a JSON file, handling both old and new data formats.
+    Loads loot runs from a JSON file using the new, clean format.
     """
     try:
         with open(filename, 'r') as f:
@@ -32,25 +31,20 @@ def load_runs(filename: str = "loot_runs.json") -> List[LootRun]:
 
     runs = []
     for run_data in raw_data:
-        # Check for the new format by seeing if 'looted_items_priced' exists
-        if 'looted_items_priced' in run_data:
-            # Pop the lists of dictionaries from the main data dict
-            looted_dicts = run_data.pop('looted_items_priced', [])
-            consumed_dicts = run_data.pop('consumed_items_priced', [])
+        # Reconstruct the nested PricedItem objects first.
+        looted_items = [PricedItem(**d)
+                        for d in run_data.get('looted_items_priced', [])]
+        consumed_items = [PricedItem(
+            **d) for d in run_data.get('consumed_items_priced', [])]
 
-            # Reconstruct the PricedItem objects
-            looted_items = [PricedItem(**d) for d in looted_dicts]
-            consumed_items = [PricedItem(**d) for d in consumed_dicts]
+        # Create the main LootRun object from the other keys.
+        run_flat_data = {k: v for k, v in run_data.items() if k not in [
+            'looted_items_priced', 'consumed_items_priced']}
+        run = LootRun(**run_flat_data)
 
-            # Create the LootRun object from the remaining flat data
-            run = LootRun(**run_data)
-            # Assign the reconstructed object lists
-            run.looted_items_priced = looted_items
-            run.consumed_items_priced = consumed_items
-            runs.append(run)
-        else:
-            # Handle old format: simply create the object.
-            # The priced lists will be empty by default.
-            runs.append(LootRun(**run_data))
+        # Assign the reconstructed lists to the new LootRun object.
+        run.looted_items_priced = looted_items
+        run.consumed_items_priced = consumed_items
+        runs.append(run)
 
     return runs
