@@ -1,0 +1,14 @@
+#run_log {
+  height: 80%;
+  border: thick green;
+  margin: 1;
+}
+
+#controls {
+  height: auto;
+  align: center middle;
+}
+
+#comment_input {
+  margin: 0 1;
+}
