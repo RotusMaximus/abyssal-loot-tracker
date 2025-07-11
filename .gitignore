@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # Databases
-/db
+/db/*.sqlite
 
 # Local data
 loot_runs.json

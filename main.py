@@ -12,13 +12,13 @@ import price_checker
 
 class LootTrackerApp(App):
     CSS_PATH = "main.css"
-    BINDINGS = [("d", "toggle_dark", "Toggle dark mode")]
 
     def __init__(self):
         super().__init__()
         self.active_run: LootRun | None = None
         self.runs = data_manager.load_runs()
         self.clipboard_monitor = ClipboardMonitor(self)
+        self.title = "Abyssal Loot Tracker"
 
     # compose, on_mount, on_button_pressed, on_radio_set_changed, start_new_run are unchanged
     # ... (Keep the code from the previous version for these methods) ...
@@ -30,9 +30,9 @@ class LootTrackerApp(App):
                 with RadioSet(id="ship_type_select"):
                     yield RadioButton("Frigate", id="frigate")
                     yield RadioButton("Destroyer", id="destroyer")
-                    yield RadioButton("Cruiser", id="cruiser")
+                    yield RadioButton("Cruiser", id="cruiser", value=True)
                 yield Label("Ship Amount:")
-                yield Input(placeholder="1-3", id="ship_amount_input")
+                yield Input(id="ship_amount_input", value="1", disabled=True)
                 yield Label("Weather:")
                 with RadioSet(id="weather_select"):
                     yield RadioButton("Dark")
@@ -42,13 +42,13 @@ class LootTrackerApp(App):
                     yield RadioButton("Gamma")
                 yield Label("Tier:")
                 yield Input(placeholder="0-6", id="tier_input")
+                yield Label("Comment:")
+                yield Input(placeholder="Add a comment...", id="comment_input")
             with Vertical(id="run-container"):
-                yield RichLog(id="run_log", wrap=True, highlight=True)
-                yield Input(placeholder="Add a comment...", id="comment_input", disabled=True)
+                yield RichLog(id="run_log", wrap=True, markup=True)
         with Horizontal(id="controls"):
             yield Button("Start Run", id="start_run", variant="success")
             yield Button("Stop Run", id="stop_run", variant="error", disabled=True)
-        yield Footer()
 
     def on_mount(self) -> None:
         price_checker.initialize_price_db()
@@ -63,14 +63,20 @@ class LootTrackerApp(App):
             await self.stop_current_run()
 
     def on_radio_set_changed(self, event: RadioSet.Changed) -> None:
+        """Dynamically update ship amount constraints based on ship type."""
         if event.radio_set.id == "ship_type_select":
             ship_amount_input = self.query_one("#ship_amount_input", Input)
-            if event.radio_set.id == "frigate":
+            if event.pressed.id == "frigate":
+                ship_amount_input.disabled = False
+                ship_amount_input.value = ""
                 ship_amount_input.placeholder = "1-3"
-            elif event.radio_set.id == "destroyer":
+            elif event.pressed.id == "destroyer":
+                ship_amount_input.disabled = False
+                ship_amount_input.value = ""
                 ship_amount_input.placeholder = "1-2"
-            elif event.radio_set.id == "cruiser":
-                ship_amount_input.placeholder = "1 (fixed)"
+            elif event.pressed.id == "cruiser":
+                ship_amount_input.value = "1"
+                ship_amount_input.disabled = True
 
     def start_new_run(self):
         self.active_run = LootRun(start_time=time.time())
@@ -128,12 +134,12 @@ class LootTrackerApp(App):
                 source = data['source']
                 if source == 'cache':
                     log.write(
-                        f" > Price for '{name}' loaded from [yellow]cache[/].")
+                        f" > Price for '{name}' loaded from [yellow]cache[/yellow].")
                 elif source == 'api':
                     log.write(
-                        f" > Price for '{name}' queried from [cyan]API[/].")
+                        f" > Price for '{name}' queried from [cyan]API[/cyan].")
                 else:
-                    log.write(f" > Price for '{name}' [red]not found[/].")
+                    log.write(f" > Price for '{name}' [red]not found[/red].")
 
             # Process looted items
             for name, qty in looted_items.items():
@@ -162,13 +168,13 @@ class LootTrackerApp(App):
         log.write(f"Looted Items: {looted_items}")
         log.write(f"Consumed Items: {consumed_items}")
         log.write(
-            f"[bold green]Total Loot Value (Sell):[/] {total_looted_sell:,.2f} ISK")
+            f"[bold green]Total Loot Value (Sell):[/bold green] {total_looted_sell:,.2f} ISK")
         log.write(
-            f"[bold red]Total Consumed Value (Sell):[/] {total_consumed_sell:,.2f} ISK")
+            f"[bold red]Total Consumed Value (Sell):[/bold red] {total_consumed_sell:,.2f} ISK")
         net_profit = total_looted_sell - total_consumed_sell
         profit_color = "green" if net_profit >= 0 else "red"
         log.write(
-            f"--- [bold {profit_color}]Net Profit (Sell): {net_profit:,.2f} ISK[/] ---")
+            f"--- [bold {profit_color}]Net Profit (Sell): {net_profit:,.2f} ISK[/bold {profit_color}] ---")
 
         self.active_run = None
         self.query_one("#start_run").disabled = False
@@ -191,8 +197,8 @@ class LootTrackerApp(App):
             for item in new_state.items.values():
                 log.write(f"{item.name}: {item.quantity}")
 
-    def action_toggle_dark(self) -> None:
-        self.dark = not self.dark
+    # def action_toggle_dark(self) -> None:
+    #     self.dark = not self.dark
 
 
 if __name__ == "__main__":
