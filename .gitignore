@@ -8,3 +8,9 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Databases
+/db
+
+# Local data
+loot_runs.json

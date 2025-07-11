@@ -1,14 +1,37 @@
-#run_log {
-  height: 80%;
+#app-grid {
+  layout: horizontal;
+  grid-size: 2;
+  grid-gutter: 1;
+}
+
+#metadata-container {
+  width: 30%;
+  height: 100%;
   border: thick green;
-  margin: 1;
+  padding: 0 1;
+}
+
+#metadata-container Label {
+  margin-top: 1;
+}
+
+#run-container {
+  width: 70%;
+  height: 100%;
+}
+
+#run_log {
+  height: 100%;
+  border: thick green;
 }
 
 #controls {
+  dock: bottom;
   height: auto;
   align: center middle;
+  padding-top: 1;
 }
 
 #comment_input {
-  margin: 0 1;
+  width: 100%;
 }
