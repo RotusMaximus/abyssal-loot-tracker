@@ -1,7 +1,9 @@
 import time
+from datetime import datetime
 import locale
+from textual import on
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Button, RichLog, Input, Label, Select
+from textual.widgets import Header, Button, RichLog, Input, Label, Select, TabbedContent, TabPane, DataTable
 from textual.containers import Container, Vertical, Horizontal
 
 from loot_run import LootRun, RunState, PricedItem
@@ -38,23 +40,31 @@ class LootTrackerApp(App):
     def compose(self) -> ComposeResult:
         """Create child widgets for the app."""
         yield Header()
-        with Container(id="app-grid"):
-            with Vertical(id="metadata-container"):
-                yield Label("Ship Type:")
-                yield Select(((option, option) for option in SHIP_TYPE_OPTIONS), value="Cruiser", id="ship_type_select", allow_blank=False)
-                yield Label("Ship Amount:")
-                yield Select(((option, option) for option in CRUISER_AMOUNT_OPTIONS), value="1", disabled=True, id="ship_amount_select", allow_blank=False)
-                yield Label("Weather:")
-                yield Select(((option, option) for option in WEATHER_TYPE_OPTIONS), id="weather_type_select", allow_blank=False)
-                yield Label("Tier:")
-                yield Select(((option, option) for option in TIER_OPTIONS), id="tier_select", allow_blank=False)
-                yield Label("Comment:")
-                yield Input(placeholder="Add a comment...", id="comment_input")
-            with Vertical(id="run-container"):
-                yield RichLog(id="run_log", wrap=True, markup=True)
-        with Horizontal(id="controls"):
-            yield Button("Start Run", id="start_run", variant="success")
-            yield Button("Stop Run", id="stop_run", variant="error", disabled=True)
+        with TabbedContent():
+            with TabPane("Current Run", id="current-run-pane"):
+                with Container(id="app-grid"):
+                    with Vertical(id="metadata-container"):
+                        yield Label("Ship Type:")
+                        yield Select(((option, option) for option in SHIP_TYPE_OPTIONS), value="Cruiser", id="ship_type_select", allow_blank=False)
+                        yield Label("Ship Amount:")
+                        yield Select(((option, option) for option in CRUISER_AMOUNT_OPTIONS), value="1", disabled=True, id="ship_amount_select", allow_blank=False)
+                        yield Label("Weather:")
+                        yield Select(((option, option) for option in WEATHER_TYPE_OPTIONS), id="weather_type_select", allow_blank=False)
+                        yield Label("Tier:")
+                        yield Select(((option, option) for option in TIER_OPTIONS), id="tier_select", allow_blank=False)
+                        yield Label("Comment:")
+                        yield Input(placeholder="Add a comment...", id="comment_input")
+                    with Vertical(id="run-container"):
+                        yield RichLog(id="run_log", wrap=True, markup=True)
+                with Horizontal(id="controls"):
+                    yield Button("Start Run", id="start_run", variant="success")
+                    yield Button("Stop Run", id="stop_run", variant="error", disabled=True)
+            with TabPane("Run History", id="run-history-pane"):
+                with Container(id="app-grid"):
+                    with Vertical(id="metadata-container"):
+                        yield Label("Settings")
+                    with Vertical(id="run-overview"):
+                        yield DataTable(id="run-overview-data-table", zebra_stripes=True, cursor_type="row")
 
     def on_mount(self) -> None:
         """Called when the app is mounted."""
@@ -87,6 +97,31 @@ class LootTrackerApp(App):
                     (option, option) for option in CRUISER_AMOUNT_OPTIONS)
                 ship_amount_select.value = "1"
                 ship_amount_select.disabled = True
+
+    @on(TabbedContent.TabActivated)
+    def on_tabbedcontent_tab_activated(self, event: TabbedContent.TabActivated) -> None:
+        """Propagate run history list when the run history tab is selected."""
+        if event.pane.id == "run-history-pane":
+            # TODO: Rework drawing of table, so no clearing of columns is needed.
+            self.query_one("#run-overview-data-table",
+                           DataTable).clear(columns=True)
+            all_runs = data_manager.load_runs()
+            ROWS = [("Date", "Ship Type",
+                     "Ship Amount", "Weather", "Tier", "Net Profit (Sell)")]
+            for run in all_runs:
+                total_looted_sell = sum(
+                    item.min_sell * item.quantity for item in run.looted_items_priced)
+                total_consumed_sell = sum(
+                    item.min_sell * item.quantity for item in run.consumed_items_priced)
+                net_profit = total_looted_sell - total_consumed_sell
+                formatted_net_profit = locale.format_string(
+                    '%.2f', net_profit, grouping=True)
+                ROWS.append((f"{datetime.fromtimestamp(run.start_time).strftime('%d.%m.%Y %H:%M')}",
+                            run.ship_type, run.ship_amount, run.weather, run.tier, f"{formatted_net_profit} ISK"))
+            self.query_one("#run-overview-data-table",
+                           DataTable).add_columns(*ROWS[0])
+            self.query_one("#run-overview-data-table",
+                           DataTable).add_rows(ROWS[1:])
 
     def start_new_run(self):
         """Starts a new loot run and updates the UI."""

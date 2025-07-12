@@ -25,6 +25,11 @@
   border: lightblue;
 }
 
+#run-overview-data-table {
+  height: 100%;
+  border: lightblue;
+}
+
 #controls {
   dock: bottom;
   height: auto;
