@@ -14,6 +14,7 @@ class Item:
 class PricedItem:
     """Stores item details including the price at the time of the run."""
     name: str
+    type_id: int
     quantity: int
     min_sell: float
     max_buy: float
