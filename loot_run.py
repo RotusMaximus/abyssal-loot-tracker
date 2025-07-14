@@ -28,14 +28,37 @@ class RunState:
 
     @classmethod
     def from_clipboard(cls, clipboard_content: str) -> 'RunState':
+        """
+        Parses clipboard content into a RunState, aggregating duplicate items
+        and handling items without explicit quantities (like Blueprints).
+        """
         items = {}
         for line in clipboard_content.strip().split('\n'):
-            if '\t' in line:
-                parts = line.split('\t')
-                if len(parts) == 2 and parts[1].isdigit():
-                    name = parts[0].strip()
-                    quantity = int(parts[1])
-                    items[name] = Item(name=name, quantity=quantity)
+            parts = line.strip().split('\t')
+            name = parts[0].strip()
+
+            # Skip empty lines
+            if not name:
+                continue
+
+            quantity = 0
+            # Case 1: Item with a valid quantity (e.g., "Item Name\t5")
+            if len(parts) == 2 and parts[1].isdigit():
+                quantity = int(parts[1])
+            # Case 2: Item without a quantity (e.g., "Blueprint Name")
+            elif len(parts) == 1:
+                quantity = 1  # Default to quantity of 1
+            else:
+                # Ignore other malformed lines
+                continue
+
+            # If the item is already in our dictionary, add the new quantity
+            if name in items:
+                items[name].quantity += quantity
+            # Otherwise, add the item to the dictionary
+            else:
+                items[name] = Item(name=name, quantity=quantity)
+
         return cls(timestamp=time.time(), items=items)
 
 
