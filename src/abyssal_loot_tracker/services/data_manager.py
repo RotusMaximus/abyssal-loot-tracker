@@ -1,10 +1,10 @@
 import sqlite3
 from pathlib import Path
 from typing import List
-from loot_run import LootRun, PricedItem
+from src.abyssal_loot_tracker.domain.loot_run import LootRun, PricedItem
 
 # Use the same consolidated database path
-DB_PATH = Path("./db/app_data.sqlite")
+DB_PATH = Path("./data/app_data.sqlite")
 
 
 def initialize_run_db():

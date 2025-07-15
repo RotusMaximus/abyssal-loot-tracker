@@ -6,10 +6,10 @@ from textual.app import App, ComposeResult
 from textual.widgets import Header, Button, RichLog, Input, Label, Select, TabbedContent, TabPane, DataTable
 from textual.containers import Container, Vertical, Horizontal
 
-from loot_run import LootRun, RunState, PricedItem
-from clipboard_monitor import ClipboardMonitor, ClipboardChanged
-import data_manager
-import price_checker
+
+from abyssal_loot_tracker.domain.loot_run import LootRun, RunState, PricedItem
+from abyssal_loot_tracker.services.clipboard_monitor import ClipboardMonitor, ClipboardChanged
+from abyssal_loot_tracker.services import data_manager, price_checker
 
 # Set locale for number formatting
 locale.setlocale(locale.LC_ALL, '')
@@ -24,7 +24,7 @@ TIER_OPTIONS = ["0", "1", "2", "3", "4", "5", "6"]
 
 
 class LootTrackerApp(App):
-    CSS_PATH = "main.css"
+    CSS_PATH = "assets/main.css"
 
     def __init__(self):
         super().__init__()
