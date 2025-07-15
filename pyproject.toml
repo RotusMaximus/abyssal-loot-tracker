@@ -1,7 +1,7 @@
 [project]
 name = "abyssal-loot-tracker"
 version = "0.1.0"
-description = "Add your description here"
+description = "Abyssal Loot Tracker for EVE Online"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -9,3 +9,7 @@ dependencies = [
     "pyperclip>=1.9.0",
     "textual>=3.7.1",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

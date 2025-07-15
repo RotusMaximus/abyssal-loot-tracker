@@ -6,9 +6,10 @@ from textual.app import App, ComposeResult
 from textual.widgets import Header, Button, RichLog, Input, Label, Select, TabbedContent, TabPane, DataTable
 from textual.containers import Container, Vertical, Horizontal
 
-from abyssal_tracker.domain.loot_run import LootRun, RunState, PricedItem
-from abyssal_tracker.services.clipboard_monitor import ClipboardMonitor, ClipboardChanged
-from abyssal_tracker import services as app_services
+
+from abyssal_loot_tracker.domain.loot_run import LootRun, RunState, PricedItem
+from abyssal_loot_tracker.services.clipboard_monitor import ClipboardMonitor, ClipboardChanged
+from abyssal_loot_tracker.services import data_manager, price_checker
 
 # Set locale for number formatting
 locale.setlocale(locale.LC_ALL, '')
@@ -29,10 +30,10 @@ class LootTrackerApp(App):
         super().__init__()
         self.active_run: LootRun | None = None
         # Initialize databases for both prices and runs on startup
-        app_services.price_checker.initialize_price_db()
-        app_services.data_manager.initialize_run_db()
+        price_checker.initialize_price_db()
+        data_manager.initialize_run_db()
         # Load existing runs from the database
-        self.runs = app_services.data_manager.load_runs()
+        self.runs = data_manager.load_runs()
         self.clipboard_monitor = ClipboardMonitor(self)
         self.title = "Abyssal Loot Tracker"
 
@@ -104,7 +105,7 @@ class LootTrackerApp(App):
             # TODO: Rework drawing of table, so no clearing of columns is needed.
             self.query_one("#run-overview-data-table",
                            DataTable).clear(columns=True)
-            all_runs = app_services.data_manager.load_runs()
+            all_runs = data_manager.load_runs()
             ROWS = [("Date", "Ship Type",
                      "Ship Amount", "Weather", "Tier", "Net Profit (Sell)")]
             for run in all_runs:
@@ -176,7 +177,7 @@ class LootTrackerApp(App):
 
         if unique_item_names:
             log.write("\n--- Fetching Prices... ---")
-            price_data = await app_services.price_checker.get_prices_for_items(unique_item_names)
+            price_data = await price_checker.get_prices_for_items(unique_item_names)
 
             # Log the source of each price
             for name, data in price_data.items():
@@ -212,7 +213,7 @@ class LootTrackerApp(App):
 
         # Append to in-memory list and save the single new run to the database
         self.runs.append(self.active_run)
-        app_services.data_manager.save_run(self.active_run)
+        data_manager.save_run(self.active_run)
 
         # Log the final results
         log.write("\n--- Run Ended ---")
