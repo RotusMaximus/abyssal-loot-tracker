@@ -188,9 +188,13 @@ class LootTrackerApp(App):
                 elif source == 'api':
                     log.write(
                         f" > Price for [green]'{name}'[/green]  queried from [cyan]API[/cyan].")
+                elif source == "blueprint_skip":
+                    log.write(
+                        f" > Price query for [green]'{name}[/green]' was [blue]skipped[/blue]. "
+                    )
                 else:
                     log.write(
-                        f" > Price for [green]'{name}'[/green]  [red]not found[/red].")
+                        f" > Price for [green]'{name}'[/green] [red]not found[/red].")
 
             # Process looted items
             for name, qty in looted_items.items():
@@ -229,7 +233,7 @@ class LootTrackerApp(App):
         formatted_total_consumed_sell = locale.format_string(
             '%.2f', total_consumed_sell, grouping=True)
         log.write(
-            f"\n[bold green]Total Loot Value (Sell):[/bold green] [bold cyan]{formatted_total_looted_sell}[/bold cyan] ISK]")
+            f"\n[bold green]Total Loot Value (Sell):[/bold green] [bold cyan]{formatted_total_looted_sell}[/bold cyan] ISK")
         log.write(
             f"[bold red]Total Consumed Value (Sell):[/bold red] [bold cyan]{formatted_total_consumed_sell}[/bold cyan] ISK")
         net_profit = total_looted_sell - total_consumed_sell
