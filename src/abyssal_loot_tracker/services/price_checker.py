@@ -8,8 +8,8 @@ from typing import Dict, Tuple, Optional, Union
 # --- Configuration ---
 BASE_API_URL = "https://evetycoon.com/api"
 REGION_ID = 10000002
-SDE_DB_PATH = Path("./db/eve-sde-2025-07-07.sqlite")
-APP_DB_PATH = Path("./db/app_data.sqlite")
+SDE_DB_PATH = Path("./data/eve-sde-2025-07-07.sqlite")
+APP_DB_PATH = Path("./data/app_data.sqlite")
 CACHE_DURATION_SECONDS = 4 * 60 * 60  # 4 hours
 
 # --- Database Management ---
