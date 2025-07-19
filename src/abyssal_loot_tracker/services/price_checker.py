@@ -8,8 +8,8 @@ from typing import Dict, Tuple, Optional, Union
 # --- Configuration ---
 BASE_API_URL = "https://evetycoon.com/api"
 REGION_ID = 10000002
-SDE_DB_PATH = Path("./db/eve-sde-2025-07-07.sqlite")
-APP_DB_PATH = Path("./db/app_data.sqlite")
+SDE_DB_PATH = Path("./data/eve-sde-2025-07-07.sqlite")
+APP_DB_PATH = Path("./data/app_data.sqlite")
 CACHE_DURATION_SECONDS = 4 * 60 * 60  # 4 hours
 
 # --- Database Management ---
@@ -87,16 +87,32 @@ def update_cached_price(type_id: int, min_sell: float, max_buy: float):
         conn.commit()
 
 
+def _to_finite_float(value) -> float:
+    """Converts a value to a finite float, defaulting to 0.0 on any failure."""
+    if value is None:
+        return 0.0
+    try:
+        f_val = float(value)
+        # Check for 'inf', '-inf', or 'nan'
+        if f_val != f_val or f_val == float('inf') or f_val == float('-inf'):
+            return 0.0
+        return f_val
+    except (ValueError, TypeError):
+        return 0.0
+
+
 async def fetch_price_from_api(session: httpx.AsyncClient, type_id: int) -> Optional[Tuple[float, float]]:
     """
-    Fetches the price for a single item type from the API.
+    Fetches the price for a single item type from the API, sanitizing the output.
     """
     url = f"{BASE_API_URL}/v1/market/stats/{REGION_ID}/{type_id}"
     try:
         response = await session.get(url, timeout=10.0)
         response.raise_for_status()
         data = response.json()
-        return data.get("minSell", 0.0), data.get("maxBuy", 0.0)
+        min_sell = _to_finite_float(data.get("minSell"))
+        max_buy = _to_finite_float(data.get("maxBuy"))
+        return min_sell, max_buy
     except (httpx.RequestError, Exception):
         # Consider logging this error
         return None
@@ -107,13 +123,24 @@ async def fetch_price_from_api(session: httpx.AsyncClient, type_id: int) -> Opti
 async def get_prices_for_items(item_names: list[str]) -> Dict[str, Dict[str, Union[float, str, int]]]:
     """
     Gets prices for a list of items, using the cache and making API calls as needed.
-    Returns a dictionary mapping item names to their price data, including the source and type_id.
+    Skips API calls for Blueprint items, defaulting their value to 0.
     """
     price_results = {}
     items_to_fetch_api = {}
 
     # First, check for all items in the SDE and cache
     for name in item_names:
+        # If item is a blueprint, skip API/cache and default to 0 value
+        if "Blueprint" in name:
+            type_id = get_type_id_from_sde(name)
+            price_results[name] = {
+                "min_sell": 0.0,
+                "max_buy": 0.0,
+                "source": "blueprint_skip",
+                "type_id": type_id or 0
+            }
+            continue
+
         type_id = get_type_id_from_sde(name)
         if not type_id:
             price_results[name] = {"min_sell": 0.0,

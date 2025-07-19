@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # Databases
-/db/*.sqlite
+/data/*.sqlite
 
 # Local data
-loot_runs.json
+.setup_complete

@@ -6,10 +6,10 @@ from textual.app import App, ComposeResult
 from textual.widgets import Header, Button, RichLog, Input, Label, Select, TabbedContent, TabPane, DataTable
 from textual.containers import Container, Vertical, Horizontal
 
-from loot_run import LootRun, RunState, PricedItem
-from clipboard_monitor import ClipboardMonitor, ClipboardChanged
-import data_manager
-import price_checker
+
+from abyssal_loot_tracker.domain.loot_run import LootRun, RunState, PricedItem
+from abyssal_loot_tracker.services.clipboard_monitor import ClipboardMonitor, ClipboardChanged
+from abyssal_loot_tracker.services import data_manager, price_checker
 
 # Set locale for number formatting
 locale.setlocale(locale.LC_ALL, '')
@@ -24,7 +24,7 @@ TIER_OPTIONS = ["0", "1", "2", "3", "4", "5", "6"]
 
 
 class LootTrackerApp(App):
-    CSS_PATH = "main.css"
+    CSS_PATH = "assets/main.css"
 
     def __init__(self):
         super().__init__()
@@ -188,9 +188,13 @@ class LootTrackerApp(App):
                 elif source == 'api':
                     log.write(
                         f" > Price for [green]'{name}'[/green]  queried from [cyan]API[/cyan].")
+                elif source == "blueprint_skip":
+                    log.write(
+                        f" > Price query for [green]'{name}[/green]' was [blue]skipped[/blue]. "
+                    )
                 else:
                     log.write(
-                        f" > Price for [green]'{name}'[/green]  [red]not found[/red].")
+                        f" > Price for [green]'{name}'[/green] [red]not found[/red].")
 
             # Process looted items
             for name, qty in looted_items.items():
@@ -229,7 +233,7 @@ class LootTrackerApp(App):
         formatted_total_consumed_sell = locale.format_string(
             '%.2f', total_consumed_sell, grouping=True)
         log.write(
-            f"\n[bold green]Total Loot Value (Sell):[/bold green] [bold cyan]{formatted_total_looted_sell}[/bold cyan] ISK]")
+            f"\n[bold green]Total Loot Value (Sell):[/bold green] [bold cyan]{formatted_total_looted_sell}[/bold cyan] ISK")
         log.write(
             f"[bold red]Total Consumed Value (Sell):[/bold red] [bold cyan]{formatted_total_consumed_sell}[/bold cyan] ISK")
         net_profit = total_looted_sell - total_consumed_sell
